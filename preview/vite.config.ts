@@ -9,7 +9,7 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   root: path.join(repositoryRoot, "preview"),
-  base: "/always-one-page/",
+  base: "./",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
