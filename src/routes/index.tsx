@@ -1,510 +1,956 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  BookOpen,
+  ArrowLeft,
+  ArrowRight,
   Check,
   ChevronDown,
-  Clock,
+  ChevronUp,
+  ClipboardList,
   Download,
-  Heart,
-  Infinity as InfinityIcon,
-  Lock,
-  Quote,
+  ExternalLink,
+  FileText,
+  Info,
+  Menu,
+  MessageCircle,
+  Plus,
+  Search,
+  Share2,
   ShieldCheck,
-  Smartphone,
-  Star,
+  Sparkles,
+  Trash2,
+  X,
 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import heroBundle from "@/assets/hero-bundle.jpg";
-import gallery1 from "@/assets/gallery-1.jpg";
-import gallery2 from "@/assets/gallery-2.jpg";
-import phone1 from "@/assets/phone-1.jpg";
-import bonusCertificate from "@/assets/bonus-certificate.jpg";
+import { ExerciseIllustration } from "@/components/exercise-illustration";
+import { categories, exercises, matchesExercise, type Exercise } from "@/data/exercises";
+import { createExercisePdf, downloadBlob, type PrescriptionItem } from "@/lib/exercise-pdf";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Guia Ilustrado do Catecismo | Entenda a fé católica de forma simples" },
+      { title: "FisioExercícios | Prescrições em poucos cliques" },
       {
         name: "description",
         content:
-          "Coleção digital com 74 quadros ilustrados do Catecismo da Igreja Católica: acesso imediato, vitalício e no celular. Aprenda a fé de forma simples e profunda.",
+          "Encontre, personalize e envie orientações de exercícios para seus pacientes em poucos cliques.",
       },
-      { property: "og:title", content: "Guia Ilustrado do Catecismo da Igreja Católica" },
+      { property: "og:title", content: "FisioExercícios" },
       {
         property: "og:description",
-        content:
-          "74 quadros ilustrados que explicam o Catecismo de forma simples e profunda. Acesso imediato e vitalício.",
+        content: "Uma biblioteca inteligente de exercícios para fisioterapeutas.",
       },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
 });
 
-const testimonials = [
-  {
-    name: "Mariana Coutinho",
-    role: "Catequista, Belo Horizonte",
-    text: "Eu tentava ler o Catecismo há anos e sempre parava no terceiro parágrafo. Com os quadros ilustrados finalmente entendi a lógica da fé.",
-  },
-  {
-    name: "Padre Anselmo Vieira",
-    role: "Paróquia São Judas",
-    text: "Uso o material nas reuniões de catequese. A linguagem é fiel ao Magistério e ao mesmo tempo acessível para quem está começando.",
-  },
-  {
-    name: "Rafael Mendonça",
-    role: "Recém-convertido",
-    text: "Voltei à Igreja depois de 15 anos. Este guia respondeu perguntas que eu tinha vergonha de fazer em voz alta.",
-  },
-  {
-    name: "Luciana Prado",
-    role: "Mãe de três filhos",
-    text: "Imprimi alguns quadros e colei na cozinha. Meus filhos aprenderam os sacramentos sem eu precisar explicar nada.",
-  },
-  {
-    name: "Débora Alencar",
-    role: "Grupo de oração",
-    text: "O que mais gosto é poder abrir no celular na fila do banco e estudar cinco minutos. Não parece estudo, parece oração.",
-  },
-  {
-    name: "Carlos Eduardo Nunes",
-    role: "Seminarista",
-    text: "Excelente material de revisão. As referências aos números do Catecismo estão todas ali, o que dá segurança doutrinária.",
-  },
-];
+type Stage = "library" | "customize" | "preview";
+type PrescriptionFields = Omit<PrescriptionItem, "exercise">;
 
-const benefits = [
-  {
-    icon: Download,
-    title: "Acesso imediato",
-    text: "Você recebe tudo por e-mail em menos de dois minutos após a confirmação.",
-  },
-  {
-    icon: InfinityIcon,
-    title: "Vitalício",
-    text: "Baixou, é seu para sempre. Sem mensalidade, sem renovação, sem prazo.",
-  },
-  {
-    icon: Smartphone,
-    title: "Celular, PC ou impresso",
-    text: "Arquivos em alta resolução, prontos para ler na tela ou imprimir em casa.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Fiel ao Magistério",
-    text: "Todo conteúdo referenciado nos números oficiais do Catecismo da Igreja Católica.",
-  },
-];
-
-const learnings = [
-  "Por que existe o mal, se Deus é bom",
-  "O que realmente acontece na Missa",
-  "Como funcionam os sete sacramentos",
-  "O sentido da confissão e da penitência",
-  "O papel de Maria na história da salvação",
-  "O que a Igreja ensina sobre o purgatório",
-  "Como rezar quando parece que nada acontece",
-  "A diferença entre pecado mortal e venial",
-];
-
-const faqs = [
-  {
-    q: "Isto é um livro físico?",
-    a: "Não. É uma coleção digital em PDF de alta resolução. Você recebe os arquivos por e-mail e pode ler no celular, no computador ou imprimir em casa.",
-  },
-  {
-    q: "Preciso ter estudado teologia para entender?",
-    a: "Nenhum conhecimento prévio é necessário. Cada quadro parte do zero, com linguagem simples e referência ao número correspondente do Catecismo.",
-  },
-  {
-    q: "Em quanto tempo recebo o acesso?",
-    a: "Imediatamente após a confirmação do pagamento. No cartão, leva cerca de dois minutos; no Pix, poucos segundos.",
-  },
-  {
-    q: "Serve para catequese de crianças?",
-    a: "Sim. Muitos catequistas usam os quadros impressos como apoio visual em encontros com crianças e adultos.",
-  },
-  {
-    q: "E se eu não gostar?",
-    a: "Você tem 7 dias de garantia incondicional. Basta responder ao e-mail de entrega e devolvemos 100% do valor, sem perguntas.",
-  },
-];
+const emptyFields: PrescriptionFields = {
+  series: "",
+  repetitions: "",
+  duration: "",
+  frequency: "",
+  observation: "",
+};
 
 function Index() {
+  const [stage, setStage] = useState<Stage>("library");
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<(typeof categories)[number]>("Todos");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Record<string, PrescriptionFields>>({});
+  const [professional, setProfessional] = useState("");
+  const [patient, setPatient] = useState("");
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [fileName, setFileName] = useState("orientacoes-exercicios.pdf");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const libraryRef = useRef<HTMLElement>(null);
+
+  const selectedExercises = useMemo(
+    () =>
+      selectedIds.map((id) => exercises.find((exercise) => exercise.id === id)!).filter(Boolean),
+    [selectedIds],
+  );
+
+  const visibleExercises = useMemo(
+    () =>
+      exercises.filter(
+        (exercise) =>
+          (activeCategory === "Todos" ||
+            exercise.region === activeCategory ||
+            exercise.category === activeCategory) &&
+          matchesExercise(exercise, search),
+      ),
+    [activeCategory, search],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
+
+  const addExercise = (exercise: Exercise) => {
+    setSelectedIds((current) =>
+      current.includes(exercise.id) ? current : [...current, exercise.id],
+    );
+    setPrescriptions((current) => ({
+      ...current,
+      [exercise.id]: current[exercise.id] ?? { ...emptyFields },
+    }));
+    setNotice(`${exercise.name} adicionado à ficha.`);
+  };
+
+  const removeExercise = (id: string) => {
+    setSelectedIds((current) => current.filter((item) => item !== id));
+  };
+
+  const moveExercise = (index: number, direction: -1 | 1) => {
+    setSelectedIds((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const updatePrescription = (id: string, field: keyof PrescriptionFields, value: string) => {
+    setPrescriptions((current) => ({
+      ...current,
+      [id]: { ...(current[id] ?? emptyFields), [field]: value },
+    }));
+  };
+
+  const startCustomization = () => {
+    if (!selectedIds.length) return;
+    setStage("customize");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const generatePdf = async () => {
+    setIsGenerating(true);
+    setNotice("");
+    try {
+      const result = await createExercisePdf({
+        professional,
+        patient,
+        items: selectedExercises.map((exercise) => ({
+          exercise,
+          ...(prescriptions[exercise.id] ?? emptyFields),
+        })),
+      });
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+      const nextUrl = URL.createObjectURL(result.blob);
+      setPdfBlob(result.blob);
+      setPdfUrl(nextUrl);
+      setFileName(result.fileName);
+      setStage("preview");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      setNotice("Não foi possível gerar a ficha. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const sharePdf = async () => {
+    if (!pdfBlob) return;
+    const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+    const message = "Olá! Segue sua ficha de orientações de exercícios.";
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try {
+        await navigator.share({
+          title: "Orientações de exercícios",
+          text: message,
+          files: [file],
+        });
+        setNotice("Ficha compartilhada com sucesso.");
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    downloadBlob(pdfBlob, fileName);
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(
+        `${message} O PDF foi baixado neste aparelho para você anexar à conversa.`,
+      )}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setNotice("O PDF foi baixado. Anexe-o na conversa do WhatsApp que acabou de abrir.");
+  };
+
+  const goToLibrary = () => {
+    setStage("library");
+    window.setTimeout(() => libraryRef.current?.scrollIntoView({ behavior: "smooth" }), 30);
+  };
+
   return (
-    <main className="overflow-x-hidden">
-      {/* HERO */}
-      <section className="relative bg-navy-deep text-cream">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-70"
-          style={{
-            background:
-              "radial-gradient(60% 50% at 50% 0%, oklch(0.34 0.08 262) 0%, transparent 70%)",
-          }}
-        />
-        <div className="relative container-page py-14 text-center md:py-20">
-          <p className="eyebrow text-gold">Coleção digital ilustrada</p>
-          <h1 className="mx-auto mt-5 max-w-3xl text-3xl leading-tight md:text-5xl">
-            Entenda todo o Catecismo da Igreja Católica de forma{" "}
-            <em className="not-italic text-gold">visual, simples e profunda</em>
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-sm text-cream/70 md:text-base">
-            74 quadros ilustrados que traduzem 2.865 parágrafos de doutrina em explicações
-            claras — para quem quer conhecer a fé sem se perder no caminho.
-          </p>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-white/95 backdrop-blur">
+        <div className="container-app flex h-18 items-center justify-between gap-4">
+          <button type="button" onClick={goToLibrary} className="flex items-center gap-3 text-left">
+            <span className="grid size-10 place-items-center rounded-xl bg-primary text-white shadow-sm">
+              <span className="relative block size-5">
+                <span className="absolute left-2 top-0 h-5 w-1 rounded-full bg-white" />
+                <span className="absolute left-0 top-2 h-1 w-5 rounded-full bg-white" />
+              </span>
+            </span>
+            <span>
+              <span className="block text-lg font-bold tracking-tight">FisioExercícios</span>
+              <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:block">
+                Prescrição simplificada
+              </span>
+            </span>
+          </button>
 
-          <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-lg border border-gold/25 bg-navy shadow-lift">
-            <img
-              src={heroBundle}
-              alt="Coleção de guias ilustrados do Catecismo da Igreja Católica"
-              width={1408}
-              height={1008}
-              className="w-full"
-            />
+          <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-600 md:flex">
+            <button type="button" onClick={goToLibrary} className="hover:text-primary">
+              Biblioteca
+            </button>
+            <button type="button" onClick={startCustomization} className="hover:text-primary">
+              Minha ficha {selectedIds.length > 0 && `(${selectedIds.length})`}
+            </button>
+            <span className="rounded-full bg-mint px-3 py-1 text-xs font-bold text-primary">
+              MVP demo
+            </span>
+          </nav>
+          <button
+            type="button"
+            aria-label="Abrir menu"
+            className="rounded-lg border border-border p-2 md:hidden"
+            onClick={() => setMobileMenu((open) => !open)}
+          >
+            {mobileMenu ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
+        {mobileMenu && (
+          <div className="border-t border-border bg-white px-5 py-4 md:hidden">
+            <button
+              type="button"
+              onClick={goToLibrary}
+              className="block w-full py-2 text-left font-semibold"
+            >
+              Biblioteca
+            </button>
+            <button
+              type="button"
+              onClick={startCustomization}
+              className="block w-full py-2 text-left font-semibold"
+            >
+              Minha ficha ({selectedIds.length})
+            </button>
           </div>
+        )}
+      </header>
 
-          <div className="mt-9">
-            <a href="#oferta" className="btn-gold btn-gold-hover">
-              Quero conhecer a coleção
-            </a>
-            <p className="mt-4 flex items-center justify-center gap-2 text-xs text-cream/60">
-              <Lock className="size-3.5" /> Acesso imediato e vitalício • Garantia de 7 dias
+      {stage === "library" && (
+        <>
+          <section className="hero-grid border-b border-border bg-hero">
+            <div className="container-app grid min-h-[380px] items-center gap-10 py-14 lg:grid-cols-[1.25fr_0.75fr] lg:py-18">
+              <div>
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+                  <Sparkles className="size-3.5 text-green" /> Biblioteca de demonstração
+                </div>
+                <h1 className="max-w-3xl text-4xl font-bold leading-[1.08] tracking-[-0.035em] text-primary md:text-5xl lg:text-[3.6rem]">
+                  Encontre o exercício ideal em <span className="text-green">segundos.</span>
+                </h1>
+                <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg">
+                  Pesquise por região do corpo e monte orientações personalizadas para seus
+                  pacientes — sem procurar em pastas ou refazer documentos.
+                </p>
+                <div className="relative mt-8 max-w-2xl">
+                  <Search className="absolute left-5 top-1/2 size-5 -translate-y-1/2 text-green" />
+                  <input
+                    autoFocus
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    onFocus={() =>
+                      libraryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                    placeholder="Qual exercício você está procurando? Ex.: ombro, cervical, joelho..."
+                    className="h-16 w-full rounded-2xl border border-slate-200 bg-white pl-14 pr-5 text-sm shadow-search outline-none transition focus:border-green focus:ring-4 focus:ring-green/10 md:text-base"
+                  />
+                </div>
+                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500">
+                  <span className="flex items-center gap-2">
+                    <Check className="size-4 text-green" /> Busca por sinônimos
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Check className="size-4 text-green" /> Dados ficam no aparelho
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Check className="size-4 text-green" /> PDF no navegador
+                  </span>
+                </div>
+              </div>
+
+              <div className="relative mx-auto hidden w-full max-w-sm lg:block">
+                <div className="absolute -inset-5 rounded-[2.5rem] bg-green/8" />
+                <div className="relative rotate-2 rounded-3xl border border-white bg-white p-5 shadow-card">
+                  <div className="flex items-center justify-between border-b border-border pb-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-green">
+                        Ficha em andamento
+                      </p>
+                      <p className="mt-1 font-bold text-primary">Paciente: Ana M.</p>
+                    </div>
+                    <ClipboardList className="size-6 text-green" />
+                  </div>
+                  {[exercises[0], exercises[1], exercises[2]].map((exercise, index) => (
+                    <div
+                      key={exercise.id}
+                      className="flex items-center gap-3 border-b border-border/70 py-3 last:border-0"
+                    >
+                      <ExerciseIllustration pose={exercise.pose} className="size-14 rounded-xl" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold">{exercise.name}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {index + 2} séries · {index + 8} repetições
+                        </p>
+                      </div>
+                      <Check className="ml-auto size-4 shrink-0 text-green" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <main ref={libraryRef} className="container-app scroll-mt-24 py-10 lg:py-14">
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div>
+                <p className="eyebrow">Biblioteca de exercícios</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-primary md:text-3xl">
+                  Explore por região ou objetivo
+                </h2>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <Info className="size-4 shrink-0" /> Exercícios demonstrativos aguardando revisão
+                clínica
+              </div>
+            </div>
+
+            <div className="scrollbar-none mb-8 flex gap-2 overflow-x-auto pb-2">
+              {categories.map((category) => {
+                const count = exercises.filter(
+                  (exercise) =>
+                    category === "Todos" ||
+                    exercise.region === category ||
+                    exercise.category === category,
+                ).length;
+                if (!count) return null;
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setActiveCategory(category)}
+                    className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      activeCategory === category
+                        ? "border-primary bg-primary text-white shadow-sm"
+                        : "border-border bg-white text-slate-600 hover:border-green hover:text-primary"
+                    }`}
+                  >
+                    {category} <span className="ml-1 opacity-65">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_330px]">
+              <section>
+                <div className="mb-5 flex items-center justify-between">
+                  <p className="text-sm text-slate-500">
+                    <strong className="text-primary">{visibleExercises.length}</strong>{" "}
+                    {visibleExercises.length === 1
+                      ? "exercício encontrado"
+                      : "exercícios encontrados"}
+                  </p>
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch("")}
+                      className="text-sm font-semibold text-green hover:underline"
+                    >
+                      Limpar busca
+                    </button>
+                  )}
+                </div>
+
+                {visibleExercises.length ? (
+                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
+                    {visibleExercises.map((exercise) => {
+                      const selected = selectedIds.includes(exercise.id);
+                      return (
+                        <article
+                          key={exercise.id}
+                          className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-soft transition hover:-translate-y-0.5 hover:border-green/40 hover:shadow-card"
+                        >
+                          <div className="relative p-3 pb-0">
+                            <ExerciseIllustration
+                              pose={exercise.pose}
+                              className="aspect-[5/3] w-full rounded-xl"
+                            />
+                            <span className="absolute left-6 top-6 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary shadow-sm">
+                              Demonstração
+                            </span>
+                          </div>
+                          <div className="flex flex-1 flex-col p-5">
+                            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.11em] text-green">
+                              {exercise.region}
+                              <span className="size-1 rounded-full bg-slate-300" />
+                              {exercise.category}
+                            </div>
+                            <h3 className="mt-2 text-lg font-bold leading-snug text-primary">
+                              {exercise.name}
+                            </h3>
+                            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                              {exercise.summary}
+                            </p>
+                            <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+                              <span className="text-xs text-slate-400">{exercise.equipment}</span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  selected ? removeExercise(exercise.id) : addExercise(exercise)
+                                }
+                                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
+                                  selected
+                                    ? "bg-mint text-primary"
+                                    : "bg-primary text-white hover:bg-primary-light"
+                                }`}
+                              >
+                                {selected ? (
+                                  <Check className="size-4" />
+                                ) : (
+                                  <Plus className="size-4" />
+                                )}
+                                {selected ? "Adicionado" : "Adicionar à ficha"}
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+                    <Search className="mx-auto size-8 text-slate-300" />
+                    <h3 className="mt-4 font-bold text-primary">Nenhum exercício encontrado</h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Tente buscar por região, movimento ou equipamento.
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              <SelectionPanel
+                selectedExercises={selectedExercises}
+                onRemove={removeExercise}
+                onMove={moveExercise}
+                onContinue={startCustomization}
+              />
+            </div>
+          </main>
+        </>
+      )}
+
+      {stage === "customize" && (
+        <CustomizationView
+          professional={professional}
+          patient={patient}
+          selectedExercises={selectedExercises}
+          prescriptions={prescriptions}
+          isGenerating={isGenerating}
+          onProfessional={setProfessional}
+          onPatient={setPatient}
+          onUpdate={updatePrescription}
+          onBack={goToLibrary}
+          onGenerate={generatePdf}
+        />
+      )}
+
+      {stage === "preview" && pdfBlob && (
+        <PreviewView
+          pdfUrl={pdfUrl}
+          fileName={fileName}
+          pdfBlob={pdfBlob}
+          selectedCount={selectedIds.length}
+          notice={notice}
+          onBack={() => setStage("customize")}
+          onDownload={() => downloadBlob(pdfBlob, fileName)}
+          onShare={sharePdf}
+        />
+      )}
+
+      {notice && stage !== "preview" && (
+        <div
+          role="status"
+          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-card md:bottom-6"
+        >
+          {notice}
+        </div>
+      )}
+
+      {stage === "library" && selectedIds.length > 0 && (
+        <div className="fixed inset-x-3 bottom-3 z-40 rounded-2xl bg-primary p-3 text-white shadow-card xl:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 pl-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/60">
+                Minha ficha
+              </p>
+              <p className="truncate text-sm font-bold">
+                {selectedIds.length}{" "}
+                {selectedIds.length === 1 ? "exercício selecionado" : "exercícios selecionados"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={startCustomization}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-green px-4 py-3 text-sm font-bold text-white"
+            >
+              Montar orientação <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SelectionPanel({
+  selectedExercises,
+  onRemove,
+  onMove,
+  onContinue,
+}: {
+  selectedExercises: Exercise[];
+  onRemove: (id: string) => void;
+  onMove: (index: number, direction: -1 | 1) => void;
+  onContinue: () => void;
+}) {
+  return (
+    <aside className="sticky top-24 hidden h-fit overflow-hidden rounded-2xl border border-border bg-white shadow-card xl:block">
+      <div className="flex items-center justify-between border-b border-border bg-primary px-5 py-4 text-white">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+            Minha ficha
+          </p>
+          <p className="mt-1 font-bold">
+            {selectedExercises.length} {selectedExercises.length === 1 ? "exercício" : "exercícios"}
+          </p>
+        </div>
+        <ClipboardList className="size-6 text-green-light" />
+      </div>
+
+      {selectedExercises.length ? (
+        <div>
+          <div className="max-h-[430px] divide-y divide-border overflow-y-auto px-4">
+            {selectedExercises.map((exercise, index) => (
+              <div key={exercise.id} className="flex items-center gap-3 py-3.5">
+                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-mint text-xs font-bold text-primary">
+                  {index + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-primary">{exercise.name}</p>
+                  <p className="text-xs text-slate-400">{exercise.region}</p>
+                </div>
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    aria-label="Mover para cima"
+                    disabled={index === 0}
+                    onClick={() => onMove(index, -1)}
+                    className="p-1 text-slate-400 disabled:opacity-25"
+                  >
+                    <ChevronUp className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Mover para baixo"
+                    disabled={index === selectedExercises.length - 1}
+                    onClick={() => onMove(index, 1)}
+                    className="p-1 text-slate-400 disabled:opacity-25"
+                  >
+                    <ChevronDown className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Remover exercício"
+                    onClick={() => onRemove(exercise.id)}
+                    className="ml-1 p-1 text-slate-400 hover:text-red-600"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-border p-4">
+            <button
+              type="button"
+              onClick={onContinue}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-green px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-green-dark"
+            >
+              Montar orientação <ArrowRight className="size-4" />
+            </button>
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-400">
+              Você poderá ajustar séries, repetições e observações.
             </p>
           </div>
         </div>
+      ) : (
+        <div className="px-6 py-12 text-center">
+          <ClipboardList className="mx-auto size-8 text-slate-300" />
+          <p className="mt-4 text-sm font-bold text-primary">Sua ficha está vazia</p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">
+            Adicione exercícios da biblioteca para começar.
+          </p>
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function CustomizationView({
+  professional,
+  patient,
+  selectedExercises,
+  prescriptions,
+  isGenerating,
+  onProfessional,
+  onPatient,
+  onUpdate,
+  onBack,
+  onGenerate,
+}: {
+  professional: string;
+  patient: string;
+  selectedExercises: Exercise[];
+  prescriptions: Record<string, PrescriptionFields>;
+  isGenerating: boolean;
+  onProfessional: (value: string) => void;
+  onPatient: (value: string) => void;
+  onUpdate: (id: string, field: keyof PrescriptionFields, value: string) => void;
+  onBack: () => void;
+  onGenerate: () => void;
+}) {
+  return (
+    <main className="container-narrow py-10 md:py-14">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary"
+      >
+        <ArrowLeft className="size-4" /> Voltar à biblioteca
+      </button>
+      <div className="mt-8 flex flex-col justify-between gap-4 border-b border-border pb-8 md:flex-row md:items-end">
+        <div>
+          <p className="eyebrow">Etapa 2 de 3</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-primary md:text-4xl">
+            Personalize a orientação
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
+            Preencha apenas o que fizer sentido para sua avaliação. Nenhum dado é enviado ou salvo
+            em servidor.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl bg-mint px-4 py-3 text-xs font-semibold text-primary">
+          <ShieldCheck className="size-5 text-green" /> Dados somente nesta sessão
+        </div>
+      </div>
+
+      <section className="mt-8 rounded-2xl border border-border bg-white p-5 shadow-soft md:p-7">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-white">
+            1
+          </span>
+          <div>
+            <h2 className="font-bold text-primary">Identificação</h2>
+            <p className="text-xs text-slate-400">Campos opcionais exibidos no PDF</p>
+          </div>
+        </div>
+        <div className="grid gap-5 md:grid-cols-2">
+          <TextField
+            label="Nome do profissional"
+            value={professional}
+            onChange={onProfessional}
+            placeholder="Ex.: Dra. Marina Silva — CREFITO 000000-F"
+          />
+          <TextField
+            label="Identificação do paciente"
+            value={patient}
+            onChange={onPatient}
+            placeholder="Ex.: Ana M. ou código interno"
+          />
+        </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="container-page py-16 md:py-20">
-        <h2 className="text-center text-2xl md:text-3xl">Quem já leu, diz o que sentiu</h2>
-        <div className="mx-auto mt-3 max-w-xs rule-gold" />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <figure key={t.name} className="card-cream flex flex-col gap-4 p-6">
-              <Quote className="size-5 text-gold" />
-              <blockquote className="text-sm leading-relaxed text-muted-foreground">
-                {t.text}
-              </blockquote>
-              <figcaption className="mt-auto border-t border-border pt-4">
-                <div className="flex gap-0.5 text-gold">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="size-3.5 fill-current" />
-                  ))}
+      <div className="mt-8 flex items-center gap-3">
+        <span className="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-white">
+          2
+        </span>
+        <div>
+          <h2 className="font-bold text-primary">Exercícios e orientações</h2>
+          <p className="text-xs text-slate-400">Ajuste cada item conforme sua avaliação</p>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-5">
+        {selectedExercises.map((exercise, index) => {
+          const values = prescriptions[exercise.id] ?? emptyFields;
+          return (
+            <article
+              key={exercise.id}
+              className="overflow-hidden rounded-2xl border border-border bg-white shadow-soft"
+            >
+              <div className="grid md:grid-cols-[190px_1fr]">
+                <div className="relative bg-mint p-5">
+                  <span className="absolute left-4 top-4 z-10 grid size-7 place-items-center rounded-lg bg-primary text-xs font-bold text-white">
+                    {index + 1}
+                  </span>
+                  <ExerciseIllustration
+                    pose={exercise.pose}
+                    className="mx-auto aspect-square w-full max-w-[150px]"
+                  />
                 </div>
-                <p className="mt-2 font-semibold">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </section>
+                <div className="p-5 md:p-6">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-green">
+                    {exercise.region} · {exercise.category}
+                  </p>
+                  <h3 className="mt-1 text-xl font-bold text-primary">{exercise.name}</h3>
+                  <p className="mt-2 text-sm text-slate-500">{exercise.summary}</p>
+                  <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <TextField
+                      compact
+                      label="Séries"
+                      value={values.series}
+                      onChange={(value) => onUpdate(exercise.id, "series", value)}
+                      placeholder="Ex.: 3"
+                    />
+                    <TextField
+                      compact
+                      label="Repetições"
+                      value={values.repetitions}
+                      onChange={(value) => onUpdate(exercise.id, "repetitions", value)}
+                      placeholder="Ex.: 10"
+                    />
+                    <TextField
+                      compact
+                      label="Tempo"
+                      value={values.duration}
+                      onChange={(value) => onUpdate(exercise.id, "duration", value)}
+                      placeholder="Ex.: 30 s"
+                    />
+                    <TextField
+                      compact
+                      label="Frequência"
+                      value={values.frequency}
+                      onChange={(value) => onUpdate(exercise.id, "frequency", value)}
+                      placeholder="Ex.: 1x/dia"
+                    />
+                  </div>
+                  <label className="mt-4 block">
+                    <span className="mb-2 block text-xs font-bold text-slate-600">
+                      Observações individuais
+                    </span>
+                    <textarea
+                      value={values.observation}
+                      onChange={(event) => onUpdate(exercise.id, "observation", event.target.value)}
+                      rows={2}
+                      placeholder="Orientações específicas para este exercício..."
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm outline-none transition focus:border-green focus:bg-white focus:ring-3 focus:ring-green/10"
+                    />
+                  </label>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
-      {/* SAMPLE / PREVIEW */}
-      <section className="bg-secondary py-16 md:py-20">
-        <div className="container-page text-center">
-          <h2 className="text-2xl md:text-3xl">Veja por dentro um dos 74 quadros do Catecismo</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
-            Cada tema ocupa uma página inteira: a explicação, as referências e a arte sacra que
-            fixa o ensinamento na memória.
+      <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl bg-primary p-5 text-white md:flex-row md:p-7">
+        <div>
+          <p className="font-bold">Sua ficha está pronta para ser gerada</p>
+          <p className="mt-1 text-sm text-white/65">
+            {selectedExercises.length} {selectedExercises.length === 1 ? "exercício" : "exercícios"}{" "}
+            · PDF A4 · dados locais
           </p>
-          <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-lg border border-border bg-card shadow-lift">
-            <img
-              src={gallery1}
-              alt="Exemplo de quadro ilustrado sobre o Novo Testamento"
-              width={900}
-              height={1150}
-              loading="lazy"
-              className="w-full"
-            />
-          </div>
         </div>
-      </section>
-
-      {/* BENEFITS */}
-      <section className="container-page py-16 md:py-20">
-        <h2 className="text-center text-2xl md:text-3xl">
-          Feito para quem tem devoção e pouco tempo
-        </h2>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((b) => (
-            <div key={b.title} className="card-cream bg-secondary/60 p-6">
-              <b.icon className="size-6 text-gold" />
-              <h3 className="mt-4 text-lg">{b.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{b.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* GALLERY */}
-      <section className="container-page pb-16 md:pb-20">
-        <div className="text-center">
-          <h2 className="text-2xl md:text-3xl">Veja como o Catecismo se torna simples</h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
-            Uma amostra das páginas: doutrina, história da Igreja, sacramentos, oração e vida
-            moral — tudo ilustrado.
-          </p>
-        </div>
-        <div className="mt-10 grid grid-cols-2 gap-4 md:gap-5">
-          {[gallery1, gallery2, gallery2, gallery1, gallery2, gallery1].map((src, i) => (
-            <img
-              key={i}
-              src={src}
-              alt={`Página ilustrada ${i + 1} da coleção`}
-              width={900}
-              height={1150}
-              loading="lazy"
-              className="w-full rounded-md border border-border shadow-soft"
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* LEARNINGS */}
-      <section className="bg-navy-deep py-16 text-cream md:py-20">
-        <div className="container-page">
-          <h2 className="text-center text-2xl md:text-3xl">
-            O que você vai entender sobre a fé católica
-          </h2>
-          <ul className="mt-10 grid gap-3 md:grid-cols-2">
-            {learnings.map((l) => (
-              <li
-                key={l}
-                className="flex items-start gap-3 rounded-md border border-gold/20 bg-navy px-5 py-4 text-sm"
-              >
-                <Check className="mt-0.5 size-4 shrink-0 text-gold" />
-                <span className="text-cream/85">{l}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* BONUSES */}
-      <section className="container-page py-16 md:py-20">
-        <div className="text-center">
-          <p className="eyebrow text-accent-foreground/70">Bônus inclusos</p>
-          <h2 className="mt-2 text-2xl md:text-3xl">Tudo o que você vai receber</h2>
-        </div>
-
-        <div className="mt-10 space-y-5">
-          <article className="card-cream grid items-center gap-6 p-6 md:grid-cols-[1fr_1.4fr]">
-            <img
-              src={gallery2}
-              alt="Bônus: 150 Salmos comentados"
-              width={900}
-              height={1150}
-              loading="lazy"
-              className="w-full rounded-md border border-border"
-            />
-            <div>
-              <p className="eyebrow text-gold">Bônus 01</p>
-              <h3 className="mt-1 text-xl">Os 150 Salmos comentados</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Todo o Saltério com uma introdução curta para cada salmo: quem escreveu, em que
-                situação rezar e o que a Igreja enxerga nele.
-              </p>
-              <ul className="mt-4 space-y-2 text-sm">
-                {["Índice por intenção de oração", "Versão para impressão", "Referências patrísticas"].map(
-                  (i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="size-4 text-success" /> {i}
-                    </li>
-                  ),
-                )}
-              </ul>
-            </div>
-          </article>
-
-          <article className="card-cream grid items-center gap-6 p-6 md:grid-cols-[1fr_1.4fr]">
-            <img
-              src={bonusCertificate}
-              alt="Bônus: certificado de conclusão"
-              width={1000}
-              height={750}
-              loading="lazy"
-              className="w-full rounded-md border border-border"
-            />
-            <div>
-              <p className="eyebrow text-gold">Bônus 02</p>
-              <h3 className="mt-1 text-xl">100 orações essenciais + certificado</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Um caderno com as orações da tradição católica, do Sinal da Cruz às ladainhas, e um
-                certificado ornamentado para imprimir ao concluir a leitura.
-              </p>
-              <ul className="mt-4 space-y-2 text-sm">
-                {["Orações em português e latim", "Novenas completas", "Certificado personalizável"].map(
-                  (i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="size-4 text-success" /> {i}
-                    </li>
-                  ),
-                )}
-              </ul>
-            </div>
-          </article>
-        </div>
-
-        <div className="mt-5 grid gap-5 md:grid-cols-2">
-          <div className="card-cream overflow-hidden">
-            <img
-              src={phone1}
-              alt="Leitura da coleção no celular"
-              width={1000}
-              height={750}
-              loading="lazy"
-              className="w-full"
-            />
-            <div className="p-6">
-              <Smartphone className="size-5 text-gold" />
-              <h3 className="mt-3 text-lg">Cabe no seu bolso</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Leia cinco minutos por dia, na fila, no ônibus ou antes de dormir.
-              </p>
-            </div>
-          </div>
-          <div className="card-cream overflow-hidden">
-            <img
-              src={bonusCertificate}
-              alt="Material pronto para impressão"
-              width={1000}
-              height={750}
-              loading="lazy"
-              className="w-full"
-            />
-            <div className="p-6">
-              <BookOpen className="size-5 text-gold" />
-              <h3 className="mt-3 text-lg">Pronto para imprimir</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Arquivos em 300 dpi: imprima em casa ou na gráfica e monte seu próprio volume.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* OFFER */}
-      <section id="oferta" className="bg-secondary py-16 md:py-20">
-        <div className="container-page">
-          <h2 className="text-center text-2xl md:text-3xl">Escolha sua oferta</h2>
-          <div className="mx-auto mt-3 max-w-xs rule-gold" />
-
-          <div className="mx-auto mt-10 max-w-lg space-y-6">
-            <div className="card-cream p-7 text-center">
-              <p className="eyebrow text-muted-foreground">Plano essencial</p>
-              <h3 className="mt-2 text-xl">Guia Ilustrado do Catecismo</h3>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Os 74 quadros ilustrados completos, em PDF de alta resolução.
-              </p>
-              <ul className="mx-auto mt-5 max-w-xs space-y-2 text-left text-sm">
-                {["74 quadros ilustrados", "Acesso imediato e vitalício", "Leia no celular ou imprima"].map(
-                  (i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="size-4 text-success" /> {i}
-                    </li>
-                  ),
-                )}
-              </ul>
-              <p className="mt-6 font-display text-4xl font-semibold">R$ 27,90</p>
-              <p className="text-xs text-muted-foreground">pagamento único</p>
-              <a href="#oferta" className="btn-gold btn-gold-hover mt-6 w-full">
-                Quero o plano essencial
-              </a>
-            </div>
-
-            <div className="relative rounded-lg border-2 border-gold bg-card p-7 text-center shadow-lift">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-navy-deep px-4 py-1 text-[0.65rem] font-semibold tracking-[0.16em] text-gold uppercase">
-                Mais escolhido
-              </span>
-              <p className="eyebrow text-gold">Coleção completa</p>
-              <h3 className="mt-2 text-xl">Catecismo + todos os bônus</h3>
-              <img
-                src={heroBundle}
-                alt="Coleção completa com bônus"
-                width={1408}
-                height={1008}
-                loading="lazy"
-                className="mt-5 w-full rounded-md"
-              />
-              <ul className="mx-auto mt-6 max-w-xs space-y-2 text-left text-sm">
-                {[
-                  "74 quadros ilustrados do Catecismo",
-                  "Bônus: 150 Salmos comentados",
-                  "Bônus: 100 orações essenciais",
-                  "Certificado de conclusão",
-                  "Atualizações futuras gratuitas",
-                ].map((i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <Check className="size-4 text-success" /> {i}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-6 text-sm text-muted-foreground line-through">R$ 129,00</p>
-              <p className="font-display text-5xl font-semibold text-navy">R$ 37,90</p>
-              <p className="text-xs text-muted-foreground">pagamento único • acesso vitalício</p>
-              <a href="#oferta" className="btn-gold btn-gold-hover mt-6 w-full">
-                Quero a coleção completa
-              </a>
-              <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Clock className="size-3.5" /> Oferta de lançamento
-              </p>
-            </div>
-          </div>
-
-          {/* GUARANTEE */}
-          <div className="mx-auto mt-10 flex max-w-lg items-start gap-4 rounded-lg border border-success/30 bg-card p-6">
-            <ShieldCheck className="size-8 shrink-0 text-success" />
-            <div>
-              <h3 className="text-lg">Garantia incondicional de 7 dias</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Se o material não fizer sentido para a sua caminhada, devolvemos cada centavo. Sem
-                formulário, sem justificativa.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="container-page py-16 md:py-20">
-        <h2 className="text-center text-2xl md:text-3xl">Perguntas frequentes</h2>
-        <div className="mx-auto mt-10 max-w-2xl divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-          {faqs.map((f) => (
-            <details key={f.q} className="group px-6 py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold">
-                {f.q}
-                <ChevronDown className="size-4 shrink-0 text-gold transition-transform group-open:rotate-180" />
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section className="bg-navy-deep py-16 text-center text-cream md:py-20">
-        <div className="container-page">
-          <Heart className="mx-auto size-6 text-gold" />
-          <h2 className="mx-auto mt-4 max-w-2xl text-2xl md:text-3xl">
-            Comece hoje a conhecer a fé que você já <em className="not-italic text-gold">reza</em>
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-cream/70">
-            74 quadros, dois bônus, acesso vitalício. Tudo por menos que um almoço.
-          </p>
-          <a href="#oferta" className="btn-gold btn-gold-hover mt-8">
-            Garantir minha coleção
-          </a>
-        </div>
-      </section>
-
-      <footer className="bg-navy py-8 text-center text-xs text-cream/50">
-        <div className="container-page">
-          <p>Guia Ilustrado do Catecismo — material de formação católica.</p>
-          <p className="mt-2">Conteúdo digital. Este site não é afiliado a nenhuma editora.</p>
-        </div>
-      </footer>
+        <button
+          type="button"
+          disabled={isGenerating}
+          onClick={onGenerate}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green px-6 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-green-dark disabled:opacity-60 md:w-auto"
+        >
+          <FileText className="size-5" />
+          {isGenerating ? "Gerando ficha..." : "Gerar ficha de exercícios"}
+        </button>
+      </div>
     </main>
+  );
+}
+
+function PreviewView({
+  pdfUrl,
+  fileName,
+  pdfBlob,
+  selectedCount,
+  notice,
+  onBack,
+  onDownload,
+  onShare,
+}: {
+  pdfUrl: string;
+  fileName: string;
+  pdfBlob: Blob;
+  selectedCount: number;
+  notice: string;
+  onBack: () => void;
+  onDownload: () => void;
+  onShare: () => void;
+}) {
+  return (
+    <main className="container-narrow py-10 md:py-14">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary"
+      >
+        <ArrowLeft className="size-4" /> Editar orientação
+      </button>
+      <div className="mt-8 rounded-3xl bg-primary px-6 py-8 text-white md:px-10">
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="flex items-start gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-green">
+              <Check className="size-6" />
+            </span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-green-light">
+                Ficha gerada com sucesso
+              </p>
+              <h1 className="mt-2 text-2xl font-bold md:text-3xl">Sua orientação está pronta</h1>
+              <p className="mt-2 text-sm text-white/65">
+                {selectedCount} exercícios organizados em um PDF profissional.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold hover:bg-white/15"
+            >
+              <ExternalLink className="size-4" /> Abrir PDF
+            </a>
+            <button
+              type="button"
+              onClick={onDownload}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-primary hover:bg-slate-50"
+            >
+              <Download className="size-4" /> Baixar PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_300px]">
+        <section className="overflow-hidden rounded-2xl border border-border bg-slate-100 shadow-soft">
+          <div className="flex items-center justify-between border-b border-border bg-white px-4 py-3">
+            <div className="flex items-center gap-2 text-sm font-bold text-primary">
+              <FileText className="size-4 text-green" /> Pré-visualização
+            </div>
+            <span className="max-w-[190px] truncate text-xs text-slate-400">{fileName}</span>
+          </div>
+          <object
+            data={pdfUrl}
+            type="application/pdf"
+            className="h-[680px] w-full"
+            aria-label="Pré-visualização da ficha em PDF"
+          >
+            <div className="p-8 text-center text-sm text-slate-500">
+              Seu navegador não exibe PDF nesta tela. Use “Abrir PDF” ou “Baixar PDF”.
+            </div>
+          </object>
+        </section>
+
+        <aside className="h-fit rounded-2xl border border-border bg-white p-5 shadow-soft lg:sticky lg:top-24">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-xl bg-[#e7f7ed] text-[#16854a]">
+              <MessageCircle className="size-5" />
+            </span>
+            <div>
+              <h2 className="font-bold text-primary">Compartilhar</h2>
+              <p className="text-xs text-slate-400">Envie pelo celular ou WhatsApp</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onShare}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1fa855] px-4 py-3.5 text-sm font-bold text-white hover:bg-[#198d48]"
+          >
+            <Share2 className="size-4" /> Enviar pelo WhatsApp
+          </button>
+          <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-500">
+            No celular, tentaremos compartilhar o PDF diretamente. Se o navegador não permitir
+            anexos, o arquivo será baixado e o WhatsApp abrirá com uma mensagem pronta.
+          </div>
+          {notice && (
+            <p
+              role="status"
+              className="mt-4 rounded-xl bg-mint p-3 text-xs font-semibold leading-relaxed text-primary"
+            >
+              {notice}
+            </p>
+          )}
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+              <ShieldCheck className="size-4 text-green" /> PDF gerado no seu navegador
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+              Nenhuma identificação do paciente foi enviada para serviços externos.
+            </p>
+          </div>
+          <span className="sr-only">{pdfBlob.size} bytes</span>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  compact?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-bold text-slate-600">{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className={`w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm outline-none transition focus:border-green focus:bg-white focus:ring-3 focus:ring-green/10 ${
+          compact ? "h-11" : "h-12"
+        }`}
+      />
+    </label>
   );
 }
