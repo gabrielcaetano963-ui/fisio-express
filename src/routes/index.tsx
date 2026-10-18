@@ -56,7 +56,7 @@ const emptyFields: PrescriptionFields = {
   observation: "",
 };
 
-function Index() {
+export function Index() {
   const [stage, setStage] = useState<Stage>("library");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<(typeof categories)[number]>("Todos");
