@@ -14,7 +14,13 @@ A interface apresenta o Plano Free e uma janela com os planos. O proprietário p
 
 Login, banco na nuvem, confirmação de pagamento e liberação automática ainda não foram implementados. IndexedDB é armazenamento local. Não marcar um visitante como assinante a partir de parâmetros da URL ou de um sinalizador local. A limitação do PDF gratuito à primeira página e uma segunda página de oferta foi discutida, mas ainda não foi aplicada: o fluxo de PDF existente permanece disponível enquanto a contratação está em preparação.
 
-## Conteúdo e fontes
+## Apresentação da biblioteca gratuita
+
+A interface abre em Cervical e mostra apenas regiões do corpo, sem filtro Todos, contagens de catálogo, contagens nas regiões ou numeração nos cards. Cada região apresenta seus três primeiros exercícios como prévia fixa; a busca pesquisa essa prévia, sem liberar outros registros. No final da lista, uma chamada Assinar plano Plus abre a janela dos planos. O catálogo fonte completo é preservado e os exercícios próprios permanecem disponíveis na sua área.
+
+Essa prévia é uma limitação de apresentação no aplicativo estático. Não é controle de autorização: o código e os dados completos continuam públicos. A proteção real do conteúdo e a liberação para assinantes dependem de login, backend e validação de pagamento. Não tratar o indicador Plano Free como autenticação. Os checkouts continuam pendentes de correção/verificação.
+
+## Fonte do catálogo
 
 `src/data/library.json` é a fonte única da biblioteca publicada. Contém os 100 exercícios trabalhados anteriormente neste projeto, adaptados para português, com instruções, equipamentos e orientações adicionais. Os identificadores `library-001` a `library-100` correspondem às ilustrações `public/exercises/001.jpg` a `100.jpg`.
 

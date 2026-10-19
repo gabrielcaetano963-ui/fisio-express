@@ -38,6 +38,11 @@ export const exerciseCategories = [
 ] as const;
 export const categories = ["Todos", ...regions, ...exerciseCategories.filter((x) => x !== "Outro")];
 export const exercises: Exercise[] = library;
+// Presentation preview only. Server-side entitlements must protect paid content
+// when accounts and billing are connected; the static bundle is not a paywall.
+export const freePreviewExercises = exercises.filter(
+  (exercise) => exercises.filter((item) => item.region === exercise.region).indexOf(exercise) < 3,
+);
 export function normalizeSearch(value: string) {
   return value
     .normalize("NFD")

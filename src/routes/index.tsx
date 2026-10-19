@@ -33,7 +33,8 @@ import {
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ExerciseIllustration } from "@/components/exercise-illustration";
 import {
-  categories,
+  regions,
+  freePreviewExercises,
   exercises as baseExercises,
   matchesExercise,
   type Exercise,
@@ -74,7 +75,7 @@ export function Index() {
   const [plansOpen, setPlansOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("library");
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("Todos");
+  const [activeCategory, setActiveCategory] = useState("Cervical");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [prescriptions, setPrescriptions] = useState<Record<string, PrescriptionFields>>({});
   const [professional, setProfessional] = useState("");
@@ -130,7 +131,7 @@ export function Index() {
     setCustomExercises((items) => [...items.filter((item) => item.id !== exercise.id), exercise]);
     setCustomOnly(true);
     setSearch("");
-    setActiveCategory("Todos");
+    setActiveCategory("");
     setNotice("Exercício salvo. Você já pode adicioná-lo à ficha.");
   };
   const exportExercises = () => {
@@ -165,7 +166,7 @@ export function Index() {
       setCustomExercises((items) => [...items, ...additions]);
       setCustomOnly(true);
       setSearch("");
-      setActiveCategory("Todos");
+      setActiveCategory("");
       setNotice(
         `${additions.length} exercício(s) importado(s). Itens já existentes foram preservados.`,
       );
@@ -184,16 +185,16 @@ export function Index() {
 
   const visibleExercises = useMemo(
     () =>
-      exercises.filter(
+      (customOnly ? customExercises : freePreviewExercises).filter(
         (exercise) =>
-          (!customOnly || exercise.custom) &&
-          (activeCategory === "Todos" ||
-            exercise.region === activeCategory ||
-            exercise.category === activeCategory) &&
+          (!activeCategory || exercise.region === activeCategory) &&
           matchesExercise(exercise, search),
       ),
-    [activeCategory, search, customOnly, exercises],
+    [activeCategory, search, customOnly, customExercises],
   );
+  const regionFilters = customOnly
+    ? [...new Set(customExercises.map((exercise) => exercise.region))]
+    : regions.filter((region) => region !== "Outro");
 
   useEffect(() => {
     return () => {
@@ -325,7 +326,7 @@ export function Index() {
               Minha ficha {selectedIds.length > 0 && `(${selectedIds.length})`}
             </button>
             <span className="rounded-full bg-mint px-3 py-1 text-xs font-bold text-primary">
-              100 exercícios ilustrados
+              Biblioteca profissional
             </span>
           </nav>
           <button
@@ -444,7 +445,7 @@ export function Index() {
               <div>
                 <p className="eyebrow">Biblioteca de exercícios</p>
                 <h2 className="mt-2 text-2xl font-bold tracking-tight text-primary md:text-3xl">
-                  Explore por região ou objetivo
+                  Explore por região do corpo
                 </h2>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-mint px-3 py-2 text-xs text-primary">
@@ -464,7 +465,8 @@ export function Index() {
                     aria-pressed={!customOnly}
                     onClick={() => {
                       setCustomOnly(false);
-                      setActiveCategory("Todos");
+                      setActiveCategory("Cervical");
+                      setSearch("");
                     }}
                     className={`rounded-md px-3 py-2 text-sm font-semibold ${!customOnly ? "bg-white text-primary shadow-sm" : "text-slate-500"}`}
                   >
@@ -475,11 +477,11 @@ export function Index() {
                     aria-pressed={customOnly}
                     onClick={() => {
                       setCustomOnly(true);
-                      setActiveCategory("Todos");
+                      setActiveCategory("");
                     }}
                     className={`rounded-md px-3 py-2 text-sm font-semibold ${customOnly ? "bg-white text-primary shadow-sm" : "text-slate-500"}`}
                   >
-                    Meus exercícios ({customExercises.length})
+                    Meus exercícios
                   </button>
                 </div>
               </div>
@@ -535,42 +537,34 @@ export function Index() {
                 event.target.value = "";
               }}
             />
-            <div className="scrollbar-none mb-8 flex gap-2 overflow-x-auto pb-2">
-              {categories.map((category) => {
-                const count = exercises.filter(
-                  (exercise) =>
-                    (!customOnly || exercise.custom) &&
-                    (category === "Todos" ||
-                      exercise.region === category ||
-                      exercise.category === category),
-                ).length;
-                if (!count) return null;
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => setActiveCategory(category)}
-                    className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                      activeCategory === category
-                        ? "border-primary bg-primary text-white shadow-sm"
-                        : "border-border bg-white text-slate-600 hover:border-green hover:text-primary"
-                    }`}
-                  >
-                    {category} <span className="ml-1 opacity-65">{count}</span>
-                  </button>
-                );
-              })}
+            <div className="mb-8 flex flex-wrap gap-2" aria-label="Regiões do corpo">
+              {regionFilters.map((region) => (
+                <button
+                  key={region}
+                  type="button"
+                  aria-pressed={activeCategory === region}
+                  onClick={() => {
+                    setActiveCategory(customOnly && activeCategory === region ? "" : region);
+                    setSearch("");
+                  }}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${activeCategory === region ? "border-primary bg-primary text-white shadow-sm" : "border-border bg-white text-slate-600 hover:border-green hover:text-primary"}`}
+                >
+                  {region}
+                </button>
+              ))}
             </div>
 
             <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_330px]">
               <section>
                 <div className="mb-5 flex items-center justify-between">
-                  <p className="text-sm text-slate-500">
-                    <strong className="text-primary">{visibleExercises.length}</strong>{" "}
-                    {visibleExercises.length === 1
-                      ? "exercício encontrado"
-                      : "exercícios encontrados"}
-                  </p>
+                  <div>
+                    <p className="font-semibold text-primary">
+                      {customOnly ? "Seus exercícios" : activeCategory}
+                    </p>
+                    {!customOnly && (
+                      <p className="mt-1 text-xs text-slate-500">Explore a prévia do Plano Free.</p>
+                    )}
+                  </div>
                   {search && (
                     <button
                       type="button"
@@ -597,9 +591,6 @@ export function Index() {
                               alt={exercise.name}
                               className="aspect-[5/3] w-full rounded-xl"
                             />
-                            <span className="absolute left-6 top-6 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary shadow-sm">
-                              {exercise.custom ? "Meu exercício" : `Exercício ${exercise.sourceId}`}
-                            </span>
                           </div>
                           <div className="flex flex-1 flex-col p-5">
                             <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.11em] text-green">
@@ -668,6 +659,34 @@ export function Index() {
                     </p>
                   </div>
                 )}
+                {!customOnly && (
+                  <section
+                    className="mt-8 overflow-hidden rounded-2xl border border-green/25 bg-primary p-6 text-white shadow-card md:p-8"
+                    aria-label="Continue com o Plano Plus"
+                  >
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-green-light">
+                      Fisio Express Plus
+                    </p>
+                    <h3 className="mt-3 text-2xl font-bold tracking-tight">
+                      Sua biblioteca pode ir além.
+                    </h3>
+                    <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/75">
+                      Você está explorando uma prévia gratuita desta região. Conheça o Plus para
+                      continuar com a biblioteca completa e preparar suas orientações com mais
+                      possibilidades.
+                    </p>
+                    <div className="mt-6 flex flex-wrap items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setPlansOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-green px-5 py-3 text-sm font-bold text-white transition hover:bg-green-dark"
+                      >
+                        Assinar plano Plus <ArrowRight className="size-4" />
+                      </button>
+                      <span className="text-xs text-white/65">Mensal ou anual. Você escolhe.</span>
+                    </div>
+                  </section>
+                )}
               </section>
 
               <SelectionPanel
@@ -716,7 +735,8 @@ export function Index() {
           devem ser individualizadas pelo profissional responsável.
         </p>
         <p className="mt-2">
-          Biblioteca: 100 exercícios ilustrados em português • Exercícios próprios com backup
+          Exercícios ilustrados em português • Orientações personalizadas • Exercícios próprios com
+          backup
         </p>
       </footer>
       {editor !== undefined && (
