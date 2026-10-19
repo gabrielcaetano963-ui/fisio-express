@@ -9,7 +9,7 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   root: path.join(repositoryRoot, "preview"),
-  base: "./",
+  base: "/",
   publicDir: path.join(repositoryRoot, "public"),
   plugins: [react(), tailwindcss()],
   resolve: {
