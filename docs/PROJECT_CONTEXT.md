@@ -4,7 +4,9 @@
 
 O projeto agora é mantido em https://github.com/gabrielcaetano963-ui/fisio-express, sob controle da conta gabrielcaetano963-ui. A branch main incorpora a biblioteca atualizada, os planos e a explicação em três passos. Use este repositório como destino das próximas alterações.
 
-Aplicativo: https://raw.githack.com/gabrielcaetano963-ui/fisio-express/fisio-express-pt/index.html
+Aplicativo em produção: https://fisio-express.pages.dev/
+
+Atualizado em 19/10/2026, após a versão de código `3e1e22d`. A publicação atual usa Cloudflare Pages, projeto `fisio-express`. RawGitHack e suas branches são históricos e não são mais o destino de anúncios nem a hospedagem principal.
 
 A conexão GitHub do Codex deve estar autenticada como Gabriel para gravar alterações nesta conta. A cópia do repositório não muda automaticamente a conta do conector.
 
@@ -62,12 +64,38 @@ Não acrescentar dosagens automáticas, promessas de resultado, qualificações 
 - `src/components/custom-exercise-dialog.tsx`: formulário acessível de cadastro e edição.
 - `src/lib/custom-exercises.ts`: validação, importação, IndexedDB e preparação da imagem.
 - `src/lib/exercise-pdf.ts`: PDF local com imagens reais e paginação sem truncar instruções.
-- `preview/vite.config.ts`: distribuição estática com caminhos relativos e imagens públicas.
+- `preview/vite.config.ts`: distribuição estática com base `/`, adequada à raiz do domínio, e imagens públicas.
+- `public/meta-pixel.js`: Pixel da Meta e preferências de medição.
+- `public/privacidade.html`, `public/sobre.html`: páginas de privacidade e informações do projeto.
+
+## Estado visual e Pixel
+
+FAQ em português após a biblioteca; degradê azul e verde na abertura, no bloco Plus e no FAQ. Preservar os três passos, os cards e o fluxo atual.
+
+Meta Pixel `940829541718246`, evento `PageView`. Por solicitação expressa do proprietário, carrega automaticamente na abertura, sem aviso ou janela automática. Preferências aparecem somente pelo botão no rodapé; uma recusa já salva no navegador é respeitada. Eventos automáticos e correspondência por formulário estão desativados na integração. Não adicionar nomes de pacientes, prescrições ou exercícios a parâmetros de eventos. O carregamento do SDK/configuração foi confirmado; recebimento no Gerenciador de Eventos da Meta não foi verificado independentemente.
+
+## Resultados da auditoria funcional e de marketing
+
+Verificado no site em 19/10/2026: busca por região e sem acentos, seleção de três exercícios de Ombro, remoção/reordenação, personalização, geração e download de um PDF real de três páginas A4; biblioteca mobile sem overflow em 390 px. Cinco testes de catálogo/backup passaram.
+
+A busca respeita a região ativa; não troca para Ombro apenas porque a palavra foi digitada. Trocar de região limpa a pesquisa. A pré-visualização PDF embutida ficou vazia no navegador da auditoria; o arquivo baixado foi validado e renderizado corretamente. Envio concluído pelo WhatsApp não foi comprovado: há compartilhamento nativo/fallback implementado, mas depende de navegador, seleção de destinatário e eventual anexo manual.
+
+Não existe comprovação documentada de revisão clínica por profissional habilitado. Não inventar autor, credenciais, instituição, eficácia clínica ou economia de tempo medida. A promessa observável é montar orientações ilustradas e baixar um PDF, não prescrever tratamento automaticamente. As funcionalidades de PDF e exercícios próprios já estão disponíveis no Free; não apresentar a assinatura Plus como operacional.
 
 ## Publicação e continuidade
 
 Repositório: https://github.com/gabrielcaetano963-ui/fisio-express
 
-A distribuição estática atual está na branch `fisio-express-pt`; `gh-pages` preserva a versão anterior. Desenvolva em uma branch de trabalho e revise antes de atualizar a publicação. Não faça force push nem altere o histórico publicado: o projeto de origem possui integração Lovable. Conectar esta cópia à plataforma exige configuração própria.
+A fonte atual está na `main`. As branches `fisio-express-pt` e `gh-pages` preservam distribuições antigas; não usá-las como fonte da produção. A hospedagem atual é Cloudflare Pages em https://fisio-express.pages.dev/, com upload direto no projeto `fisio-express` da conta Cloudflare do proprietário. Não há integração automática GitHub → Cloudflare configurada: um commit no GitHub não atualiza sozinho o site. Desenvolva em uma branch de trabalho e revise antes de atualizar a publicação. Não faça force push nem altere o histórico publicado: o projeto de origem possui integração Lovable. Conectar esta cópia à plataforma exige configuração própria.
+
+Build estático: `bun run build:preview`, saída `dist-preview`. Para publicar, envie o conteúdo completo dessa pasta (ou ZIP com index.html na raiz) como implantação de produção no mesmo projeto Cloudflare Pages. Isso preserva o endereço principal. Não substituir pelo build TanStack/Nitro nem criar outro projeto a cada edição. Acesso à Cloudflare deve ocorrer com a conta do proprietário; não guardar tokens no código ou em prompts.
+
+## Preparar um ambiente de desenvolvimento na nuvem
+
+Leia `AGENTS.md` e este documento antes de trabalhar. Use somente o repositório `gabrielcaetano963-ui/fisio-express`. A conta antiga `suportesaudeacimadetudo-del` não é o destino autorizado para alterações. Uma conexão antiga não muda automaticamente para a conta Gabriel.
+
+O projeto usa Node.js moderno e Bun 1.3.1, com `bun.lock`. Instalação: `bun install --frozen-lockfile`. Verificações: `bun run typecheck`, `bun run check:library` e `bun run build:preview`. Caso os atalhos de execução não resolvam no ambiente, os equivalentes já usados são `node node_modules/typescript/bin/tsc --noEmit`, `node --experimental-strip-types --test tests/library.test.ts` e `node node_modules/vite/bin/vite.js build --config preview/vite.config.ts`. A geração estática não requer chave de API, banco de dados ou segredos.
+
+O objetivo é continuar pelo Chrome, usando um ambiente de nuvem que clone o GitHub e execute os comandos remotamente. Isso é diferente de depender deste computador ligado. A conversa existente chamada “Fisio Express — continuidade na nuvem” tem histórico antigo e precisa receber este estado atualizado antes de aplicar alterações. O chat local original não é transferido integralmente por um resumo; anexos antigos e dados IndexedDB também não são sincronizados por isso.
 
 Para continuar em outro computador, abra/clone este repositório e forneça este documento ao assistente. Faça backup dos exercícios no aplicativo antes de trocar de aparelho. O histórico desta conversa permanece separado do repositório.
