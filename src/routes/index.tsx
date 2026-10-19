@@ -853,6 +853,27 @@ export function Index() {
           Exercícios ilustrados em português • Orientações personalizadas • Exercícios próprios com
           backup
         </p>
+        <nav
+          aria-label="Informações do site"
+          className="mt-4 flex flex-wrap gap-x-6 gap-y-3 font-semibold text-primary"
+        >
+          <a
+            href="/privacidade"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4"
+          >
+            Política de privacidade
+          </a>
+          <a
+            href="/sobre"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4"
+          >
+            Sobre, contato e condições de uso
+          </a>
+        </nav>
       </footer>
       {editor !== undefined && (
         <CustomExerciseDialog
