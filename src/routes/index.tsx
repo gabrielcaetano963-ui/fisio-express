@@ -369,7 +369,7 @@ export function Index() {
       {stage === "library" && (
         <>
           <section className="hero-grid border-b border-border bg-hero">
-            <div className="container-app grid min-h-[380px] items-center gap-10 py-14 lg:grid-cols-[1.25fr_0.75fr] lg:py-18">
+            <div className="container-app grid gap-8 py-10 md:py-14">
               <div>
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
                   <Sparkles className="size-3.5 text-green" /> Sua biblioteca de exercícios
@@ -379,7 +379,7 @@ export function Index() {
                 </h1>
                 <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg">
                   Pesquise por região do corpo e monte orientações personalizadas para seus
-                  pacientes — sem procurar em pastas ou refazer documentos.
+                  pacientes. Escolha, personalize e baixe sua ficha em PDF.
                 </p>
                 <div className="relative mt-8 max-w-2xl">
                   <Search className="absolute left-5 top-1/2 size-5 -translate-y-1/2 text-green" />
@@ -391,26 +391,68 @@ export function Index() {
                     className="h-16 w-full rounded-2xl border border-slate-200 bg-white pl-14 pr-5 text-sm shadow-search outline-none transition focus:border-green focus:ring-4 focus:ring-green/10 md:text-base"
                   />
                 </div>
-                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500">
-                  <span className="flex items-center gap-2">
-                    <Check className="size-4 text-green" /> Busca por movimento e região
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Check className="size-4 text-green" /> Dados ficam no aparelho
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Check className="size-4 text-green" /> PDF no navegador
-                  </span>
-                </div>
               </div>
 
-              <div className="relative mx-auto hidden w-full max-w-sm lg:block">
+              <section aria-labelledby="como-funciona">
+                <h2 id="como-funciona" className="text-xl font-bold text-primary md:text-2xl">
+                  Sua ficha em 3 passos
+                </h2>
+                <ol className="mt-5 grid gap-4 md:grid-cols-3">
+                  {[
+                    {
+                      icon: Search,
+                      title: "Encontre o exercício",
+                      description: "Escolha a região do corpo ou pesquise pelo nome.",
+                      action: "Pesquise e escolha",
+                    },
+                    {
+                      icon: ClipboardList,
+                      title: "Monte sua ficha",
+                      description: "Adicione os exercícios e ajuste as séries e repetições.",
+                      action: "Ajuste para seu paciente",
+                    },
+                    {
+                      icon: Download,
+                      title: "Baixe o PDF",
+                      description: "Sua ficha fica pronta para imprimir ou enviar ao paciente.",
+                      action: "Pronto para enviar",
+                    },
+                  ].map(({ icon: Icon, title, description, action }, index) => (
+                    <li
+                      key={title}
+                      className="relative rounded-2xl border border-border bg-white p-5 shadow-soft"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="grid size-9 place-items-center rounded-full bg-primary text-sm font-bold text-white">
+                          {index + 1}
+                        </span>
+                        <Icon aria-hidden="true" className="size-7 text-green" />
+                      </div>
+                      <h3 className="mt-4 text-lg font-bold text-primary">{title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
+                      <div
+                        aria-hidden="true"
+                        className="mt-5 flex items-center gap-2 rounded-xl bg-mint px-3 py-3 text-xs font-semibold text-primary"
+                      >
+                        {index === 2 ? (
+                          <FileText className="size-4 shrink-0 text-green" />
+                        ) : (
+                          <Check className="size-4 shrink-0 text-green" />
+                        )}
+                        {action}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              <div className="relative mx-auto mt-3 w-full max-w-xl">
                 <div className="absolute -inset-5 rounded-[2.5rem] bg-green/8" />
-                <div className="relative rotate-2 rounded-3xl border border-white bg-white p-5 shadow-card">
+                <div className="relative rounded-3xl border border-white bg-white p-5 shadow-card">
                   <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wider text-green">
-                        Sua próxima orientação
+                        Veja como sua ficha vai ficar
                       </p>
                       <p className="mt-1 font-bold text-primary">
                         Organizada. Ilustrada. Personalizada.

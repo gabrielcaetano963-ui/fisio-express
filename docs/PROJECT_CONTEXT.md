@@ -20,6 +20,10 @@ A interface abre em Cervical e mostra apenas regiões do corpo, sem filtro Todos
 
 Essa prévia é uma limitação de apresentação no aplicativo estático. Não é controle de autorização: o código e os dados completos continuam públicos. A proteção real do conteúdo e a liberação para assinantes dependem de login, backend e validação de pagamento. Não tratar o indicador Plano Free como autenticação. Os checkouts continuam pendentes de correção/verificação.
 
+## Como funciona na tela inicial
+
+Antes da prévia da ficha, a interface apresenta três passos: Encontre o exercício, Monte sua ficha e Baixe o PDF. Os cartões aparecem lado a lado no computador e empilhados no celular, com textos curtos e ícones. A prévia ilustrada aparece em seguida, também no celular, com a chamada Veja como sua ficha vai ficar. O fluxo de seleção, personalização e geração do PDF permanece o mesmo.
+
 ## Fonte do catálogo
 
 `src/data/library.json` é a fonte única da biblioteca publicada. Contém os 100 exercícios trabalhados anteriormente neste projeto, adaptados para português, com instruções, equipamentos e orientações adicionais. Os identificadores `library-001` a `library-100` correspondem às ilustrações `public/exercises/001.jpg` a `100.jpg`.
