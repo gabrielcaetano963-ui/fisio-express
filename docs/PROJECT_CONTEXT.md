@@ -1,5 +1,13 @@
 # Contexto do Fisio Express
 
+## Repositório principal
+
+O projeto agora é mantido em https://github.com/gabrielcaetano963-ui/fisio-express, sob controle da conta gabrielcaetano963-ui. A branch main incorpora a biblioteca atualizada, os planos e a explicação em três passos. Use este repositório como destino das próximas alterações.
+
+Aplicativo: https://raw.githack.com/gabrielcaetano963-ui/fisio-express/fisio-express-pt/index.html
+
+A conexão GitHub do Codex deve estar autenticada como Gabriel para gravar alterações nesta conta. A cópia do repositório não muda automaticamente a conta do conector.
+
 ## Objetivo
 
 Transformar o aplicativo existente em uma ferramenta profissional em português: encontrar exercícios, criar exercícios próprios e gerar orientações individualizadas em PDF. Preservar a identidade em azul-escuro e verde e o fluxo biblioteca → personalização → PDF.
@@ -58,8 +66,8 @@ Não acrescentar dosagens automáticas, promessas de resultado, qualificações 
 
 ## Publicação e continuidade
 
-Repositório: https://github.com/suportesaudeacimadetudo-del/always-one-page
+Repositório: https://github.com/gabrielcaetano963-ui/fisio-express
 
-A versão publicada anteriormente está em `gh-pages`. Desenvolva em uma branch de trabalho e revise antes de atualizar a publicação. Não faça force push nem altere o histórico publicado: o projeto tem integração Lovable.
+A distribuição estática atual está na branch `fisio-express-pt`; `gh-pages` preserva a versão anterior. Desenvolva em uma branch de trabalho e revise antes de atualizar a publicação. Não faça force push nem altere o histórico publicado: o projeto de origem possui integração Lovable. Conectar esta cópia à plataforma exige configuração própria.
 
 Para continuar em outro computador, abra/clone este repositório e forneça este documento ao assistente. Faça backup dos exercícios no aplicativo antes de trocar de aparelho. O histórico desta conversa permanece separado do repositório.
