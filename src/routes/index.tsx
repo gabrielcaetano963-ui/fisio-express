@@ -22,20 +22,33 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { CustomExerciseDialog } from "@/components/custom-exercise-dialog";
+import {
+  MAX_BACKUP_BYTES,
+  parseBackup,
+  readCustomExercises,
+  writeCustomExercises,
+} from "@/lib/custom-exercises";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ExerciseIllustration } from "@/components/exercise-illustration";
-import { categories, exercises, matchesExercise, type Exercise } from "@/data/exercises";
+import {
+  categories,
+  exercises as baseExercises,
+  matchesExercise,
+  type Exercise,
+} from "@/data/exercises";
 import { createExercisePdf, downloadBlob, type PrescriptionItem } from "@/lib/exercise-pdf";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FisioExercícios | Prescrições em poucos cliques" },
+      { title: "Fisio Express | Prescrições em poucos cliques" },
       {
         name: "description",
         content:
           "Encontre, personalize e envie orientações de exercícios para seus pacientes em poucos cliques.",
       },
-      { property: "og:title", content: "FisioExercícios" },
+      { property: "og:title", content: "Fisio Express" },
       {
         property: "og:description",
         content: "Uma biblioteca inteligente de exercícios para fisioterapeutas.",
@@ -59,7 +72,7 @@ const emptyFields: PrescriptionFields = {
 export function Index() {
   const [stage, setStage] = useState<Stage>("library");
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<(typeof categories)[number]>("Todos");
+  const [activeCategory, setActiveCategory] = useState("Todos");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [prescriptions, setPrescriptions] = useState<Record<string, PrescriptionFields>>({});
   const [professional, setProfessional] = useState("");
@@ -71,23 +84,113 @@ export function Index() {
   const [notice, setNotice] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
   const libraryRef = useRef<HTMLElement>(null);
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const [customOnly, setCustomOnly] = useState(false);
+  const [editor, setEditor] = useState<Exercise | null | undefined>(undefined);
+  const [deleting, setDeleting] = useState<Exercise | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
+  const [storageError, setStorageError] = useState("");
+  const [storageBusy, setStorageBusy] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
+  const exercises = useMemo(() => [...baseExercises, ...customExercises], [customExercises]);
+  useEffect(() => {
+    let active = true;
+    readCustomExercises()
+      .then((items) => {
+        if (active) {
+          setCustomExercises(items);
+          setStorageReady(true);
+        }
+      })
+      .catch(() => {
+        if (active)
+          setStorageError(
+            "O armazenamento deste navegador está indisponível. Seus exercícios existentes não foram alterados. Verifique as permissões do navegador e recarregue a página.",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+  const saveExercise = async (exercise: Exercise) => {
+    try {
+      await writeCustomExercises([exercise]);
+    } catch {
+      throw new Error(
+        "Não foi possível salvar no navegador. Verifique o espaço disponível e tente novamente.",
+      );
+    }
+    setCustomExercises((items) => [...items.filter((item) => item.id !== exercise.id), exercise]);
+    setCustomOnly(true);
+    setSearch("");
+    setActiveCategory("Todos");
+    setNotice("Exercício salvo. Você já pode adicioná-lo à ficha.");
+  };
+  const exportExercises = () => {
+    downloadBlob(
+      new Blob(
+        [
+          JSON.stringify(
+            {
+              format: "fisio-express-exercises",
+              version: 1,
+              exportedAt: new Date().toISOString(),
+              exercises: customExercises,
+            },
+            null,
+            2,
+          ),
+        ],
+        { type: "application/json" },
+      ),
+      "fisio-express-meus-exercicios.json",
+    );
+  };
+  const importExercises = async (file: File) => {
+    setStorageBusy(true);
+    try {
+      if (file.size > MAX_BACKUP_BYTES) throw new Error("O backup deve ter até 25 MB.");
+      const incoming = parseBackup(await file.text());
+      // Preserve current records, including edits made after an earlier backup.
+      const ids = new Set(customExercises.map((item) => item.id));
+      const additions = incoming.filter((item) => !ids.has(item.id));
+      await writeCustomExercises(additions);
+      setCustomExercises((items) => [...items, ...additions]);
+      setCustomOnly(true);
+      setSearch("");
+      setActiveCategory("Todos");
+      setNotice(
+        `${additions.length} exercício(s) importado(s). Itens já existentes foram preservados.`,
+      );
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível importar o backup.");
+    } finally {
+      setStorageBusy(false);
+    }
+  };
 
   const selectedExercises = useMemo(
     () =>
       selectedIds.map((id) => exercises.find((exercise) => exercise.id === id)!).filter(Boolean),
-    [selectedIds],
+    [selectedIds, exercises],
   );
 
   const visibleExercises = useMemo(
     () =>
       exercises.filter(
         (exercise) =>
+          (!customOnly || exercise.custom) &&
           (activeCategory === "Todos" ||
             exercise.region === activeCategory ||
             exercise.category === activeCategory) &&
           matchesExercise(exercise, search),
       ),
-    [activeCategory, search],
+    [activeCategory, search, customOnly, exercises],
   );
 
   useEffect(() => {
@@ -116,7 +219,7 @@ export function Index() {
       const target = index + direction;
       if (target < 0 || target >= current.length) return current;
       const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
+      [next[index], next[target]] = [next[target]!, next[index]!];
       return next;
     });
   };
@@ -205,7 +308,7 @@ export function Index() {
               </span>
             </span>
             <span>
-              <span className="block text-lg font-bold tracking-tight">FisioExercícios</span>
+              <span className="block text-lg font-bold tracking-tight">Fisio Express</span>
               <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:block">
                 Prescrição simplificada
               </span>
@@ -220,7 +323,7 @@ export function Index() {
               Minha ficha {selectedIds.length > 0 && `(${selectedIds.length})`}
             </button>
             <span className="rounded-full bg-mint px-3 py-1 text-xs font-bold text-primary">
-              MVP demo
+              100 exercícios ilustrados
             </span>
           </nav>
           <button
@@ -258,7 +361,7 @@ export function Index() {
             <div className="container-app grid min-h-[380px] items-center gap-10 py-14 lg:grid-cols-[1.25fr_0.75fr] lg:py-18">
               <div>
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
-                  <Sparkles className="size-3.5 text-green" /> Biblioteca de demonstração
+                  <Sparkles className="size-3.5 text-green" /> Sua biblioteca de exercícios
                 </div>
                 <h1 className="max-w-3xl text-4xl font-bold leading-[1.08] tracking-[-0.035em] text-primary md:text-5xl lg:text-[3.6rem]">
                   Encontre o exercício ideal em <span className="text-green">segundos.</span>
@@ -270,19 +373,16 @@ export function Index() {
                 <div className="relative mt-8 max-w-2xl">
                   <Search className="absolute left-5 top-1/2 size-5 -translate-y-1/2 text-green" />
                   <input
-                    autoFocus
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    onFocus={() =>
-                      libraryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                    }
+                    aria-label="Buscar exercícios"
                     placeholder="Qual exercício você está procurando? Ex.: ombro, cervical, joelho..."
                     className="h-16 w-full rounded-2xl border border-slate-200 bg-white pl-14 pr-5 text-sm shadow-search outline-none transition focus:border-green focus:ring-4 focus:ring-green/10 md:text-base"
                   />
                 </div>
                 <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-slate-500">
                   <span className="flex items-center gap-2">
-                    <Check className="size-4 text-green" /> Busca por sinônimos
+                    <Check className="size-4 text-green" /> Busca por movimento e região
                   </span>
                   <span className="flex items-center gap-2">
                     <Check className="size-4 text-green" /> Dados ficam no aparelho
@@ -299,23 +399,27 @@ export function Index() {
                   <div className="flex items-center justify-between border-b border-border pb-4">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wider text-green">
-                        Ficha em andamento
+                        Sua próxima orientação
                       </p>
-                      <p className="mt-1 font-bold text-primary">Paciente: Ana M.</p>
+                      <p className="mt-1 font-bold text-primary">
+                        Organizada. Ilustrada. Personalizada.
+                      </p>
                     </div>
                     <ClipboardList className="size-6 text-green" />
                   </div>
-                  {[exercises[0], exercises[1], exercises[2]].map((exercise, index) => (
+                  {[exercises[10]!, exercises[60]!, exercises[70]!].map((exercise) => (
                     <div
                       key={exercise.id}
                       className="flex items-center gap-3 border-b border-border/70 py-3 last:border-0"
                     >
-                      <ExerciseIllustration pose={exercise.pose} className="size-14 rounded-xl" />
+                      <ExerciseIllustration
+                        image={exercise.image}
+                        alt={exercise.name}
+                        className="size-14 rounded-xl"
+                      />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold">{exercise.name}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {index + 2} séries · {index + 8} repetições
-                        </p>
+                        <p className="mt-1 text-xs text-slate-500">{exercise.region}</p>
                       </div>
                       <Check className="ml-auto size-4 shrink-0 text-green" />
                     </div>
@@ -333,19 +437,102 @@ export function Index() {
                   Explore por região ou objetivo
                 </h2>
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                <Info className="size-4 shrink-0" /> Exercícios demonstrativos aguardando revisão
-                clínica
+              <div className="flex items-center gap-2 rounded-lg bg-mint px-3 py-2 text-xs text-primary">
+                <Info className="size-4 shrink-0" /> Individualize as orientações conforme sua
+                avaliação.
               </div>
             </div>
 
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white p-4 shadow-soft">
+              <div className="flex flex-wrap items-center gap-3">
+                <div
+                  className="flex rounded-lg bg-slate-100 p-1"
+                  aria-label="Origem dos exercícios"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={!customOnly}
+                    onClick={() => {
+                      setCustomOnly(false);
+                      setActiveCategory("Todos");
+                    }}
+                    className={`rounded-md px-3 py-2 text-sm font-semibold ${!customOnly ? "bg-white text-primary shadow-sm" : "text-slate-500"}`}
+                  >
+                    Biblioteca
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={customOnly}
+                    onClick={() => {
+                      setCustomOnly(true);
+                      setActiveCategory("Todos");
+                    }}
+                    className={`rounded-md px-3 py-2 text-sm font-semibold ${customOnly ? "bg-white text-primary shadow-sm" : "text-slate-500"}`}
+                  >
+                    Meus exercícios ({customExercises.length})
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={!storageReady || storageBusy}
+                onClick={() => setEditor(null)}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+              >
+                <Plus className="size-4" /> Novo exercício
+              </button>
+            </div>
+            {storageError && (
+              <p role="alert" className="mb-5 rounded-lg bg-red-50 p-4 text-sm text-red-800">
+                {storageError}
+              </p>
+            )}
+            {customOnly && (
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-mint p-4">
+                <p className="max-w-xl text-xs leading-relaxed text-primary">
+                  Seus exercícios ficam neste navegador. Exporte um backup antes de trocar de
+                  aparelho ou limpar os dados. O backup não inclui informações de pacientes.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={exportExercises}
+                    disabled={!storageReady || !customExercises.length || storageBusy}
+                    className="text-sm font-bold text-primary underline disabled:opacity-40"
+                  >
+                    Exportar backup
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => importRef.current?.click()}
+                    disabled={!storageReady || storageBusy}
+                    className="text-sm font-bold text-primary underline disabled:opacity-40"
+                  >
+                    {storageBusy ? "Importando…" : "Importar backup"}
+                  </button>
+                </div>
+              </div>
+            )}
+            <input
+              ref={importRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              aria-label="Arquivo de backup"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importExercises(file);
+                event.target.value = "";
+              }}
+            />
             <div className="scrollbar-none mb-8 flex gap-2 overflow-x-auto pb-2">
               {categories.map((category) => {
                 const count = exercises.filter(
                   (exercise) =>
-                    category === "Todos" ||
-                    exercise.region === category ||
-                    exercise.category === category,
+                    (!customOnly || exercise.custom) &&
+                    (category === "Todos" ||
+                      exercise.region === category ||
+                      exercise.category === category),
                 ).length;
                 if (!count) return null;
                 return (
@@ -396,11 +583,12 @@ export function Index() {
                         >
                           <div className="relative p-3 pb-0">
                             <ExerciseIllustration
-                              pose={exercise.pose}
+                              image={exercise.image}
+                              alt={exercise.name}
                               className="aspect-[5/3] w-full rounded-xl"
                             />
                             <span className="absolute left-6 top-6 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary shadow-sm">
-                              Demonstração
+                              {exercise.custom ? "Meu exercício" : `Exercício ${exercise.sourceId}`}
                             </span>
                           </div>
                           <div className="flex flex-1 flex-col p-5">
@@ -415,6 +603,26 @@ export function Index() {
                             <p className="mt-2 text-sm leading-relaxed text-slate-500">
                               {exercise.summary}
                             </p>
+                            {exercise.custom && (
+                              <div className="mt-4 flex gap-4 text-xs font-semibold">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditor(exercise)}
+                                  className="text-green hover:underline"
+                                  aria-label={`Editar ${exercise.name}`}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleting(exercise)}
+                                  className="text-red-700 hover:underline"
+                                  aria-label={`Excluir ${exercise.name}`}
+                                >
+                                  Excluir
+                                </button>
+                              </div>
+                            )}
                             <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
                               <span className="text-xs text-slate-400">{exercise.equipment}</span>
                               <button
@@ -491,10 +699,74 @@ export function Index() {
         />
       )}
 
+      <footer className="container-app border-t border-border py-8 text-xs leading-relaxed text-slate-500">
+        <p className="font-bold text-primary">Fisio Express</p>
+        <p className="mt-2">
+          Organização de exercícios e orientações para fisioterapeutas. A seleção e a prescrição
+          devem ser individualizadas pelo profissional responsável.
+        </p>
+        <p className="mt-2">
+          Biblioteca: 100 exercícios ilustrados em português • Exercícios próprios com backup
+        </p>
+      </footer>
+      {editor !== undefined && (
+        <CustomExerciseDialog
+          key={editor?.id ?? "new"}
+          initial={editor}
+          onClose={() => setEditor(undefined)}
+          onSave={saveExercise}
+        />
+      )}
+      <Dialog
+        open={!!deleting}
+        onOpenChange={(open) => {
+          if (!open && !storageBusy) setDeleting(null);
+        }}
+      >
+        <DialogContent className="w-[calc(100%-24px)] rounded-2xl bg-white">
+          <DialogTitle>Excluir exercício?</DialogTitle>
+          <DialogDescription>
+            O exercício “{deleting?.name}” será removido deste navegador e da ficha atual. Exporte
+            um backup se desejar guardar uma cópia.
+          </DialogDescription>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              disabled={storageBusy}
+              onClick={() => setDeleting(null)}
+              className="rounded-lg border border-border px-4 py-2"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={storageBusy}
+              onClick={async () => {
+                if (!deleting) return;
+                setStorageBusy(true);
+                try {
+                  await writeCustomExercises([], deleting.id);
+                  setCustomExercises((items) => items.filter((item) => item.id !== deleting.id));
+                  removeExercise(deleting.id);
+                  setDeleting(null);
+                  setNotice("Exercício excluído.");
+                } catch {
+                  setNotice("Não foi possível excluir. Tente novamente.");
+                } finally {
+                  setStorageBusy(false);
+                }
+              }}
+              className="rounded-lg bg-red-700 px-4 py-2 text-white"
+            >
+              {storageBusy ? "Excluindo…" : "Excluir exercício"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
       {notice && stage !== "preview" && (
         <div
           role="status"
-          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-card md:bottom-6"
+          className="fixed bottom-24 left-1/2 z-[60] w-[calc(100%-32px)] max-w-lg -translate-x-1/2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-card md:bottom-6"
         >
           {notice}
         </div>
@@ -718,7 +990,8 @@ function CustomizationView({
                     {index + 1}
                   </span>
                   <ExerciseIllustration
-                    pose={exercise.pose}
+                    image={exercise.image}
+                    alt={exercise.name}
                     className="mx-auto aspect-square w-full max-w-[150px]"
                   />
                 </div>
@@ -727,7 +1000,17 @@ function CustomizationView({
                     {exercise.region} · {exercise.category}
                   </p>
                   <h3 className="mt-1 text-xl font-bold text-primary">{exercise.name}</h3>
-                  <p className="mt-2 text-sm text-slate-500">{exercise.summary}</p>
+                  <ol className="mt-3 list-inside list-decimal space-y-2 text-sm leading-relaxed text-slate-600">
+                    {exercise.instructions.map((line, i) => (
+                      <li key={i}>{line}</li>
+                    ))}
+                  </ol>
+                  {exercise.notes && (
+                    <p className="mt-3 rounded-lg bg-mint p-3 text-sm text-primary">
+                      {exercise.notes}
+                    </p>
+                  )}
+
                   <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <TextField
                       compact
@@ -839,7 +1122,9 @@ function PreviewView({
               </p>
               <h1 className="mt-2 text-2xl font-bold md:text-3xl">Sua orientação está pronta</h1>
               <p className="mt-2 text-sm text-white/65">
-                {selectedCount} exercícios organizados em um PDF profissional.
+                {selectedCount}{" "}
+                {selectedCount === 1 ? "exercício organizado" : "exercícios organizados"} em um PDF
+                profissional.
               </p>
             </div>
           </div>
@@ -945,6 +1230,7 @@ function TextField({
       <span className="mb-2 block text-xs font-bold text-slate-600">{label}</span>
       <input
         value={value}
+        maxLength={150}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         className={`w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm outline-none transition focus:border-green focus:bg-white focus:ring-3 focus:ring-green/10 ${
