@@ -703,7 +703,7 @@ export function Index() {
                 )}
                 {!customOnly && (
                   <section
-                    className="mt-8 overflow-hidden rounded-2xl border border-green/25 bg-primary p-6 text-white shadow-card md:p-8"
+                    className="plus-gradient mt-8 overflow-hidden rounded-2xl border border-green/25 bg-primary p-6 text-white shadow-card md:p-8"
                     aria-label="Continue com o Plano Plus"
                   >
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-green-light">
@@ -739,6 +739,79 @@ export function Index() {
               />
             </div>
           </main>
+          <section
+            id="faq"
+            aria-labelledby="faq-title"
+            className="faq-section scroll-mt-24 border-t border-border"
+          >
+            <div className="container-app grid gap-8 py-14 md:py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+              <div>
+                <p className="eyebrow">Tire suas dúvidas</p>
+                <h2
+                  id="faq-title"
+                  className="mt-3 text-3xl font-bold tracking-tight text-primary md:text-4xl"
+                >
+                  Perguntas frequentes
+                </h2>
+                <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
+                  Tudo o que você precisa saber para começar a organizar suas orientações com o
+                  Fisio Express.
+                </p>
+                <a
+                  href="#biblioteca"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    libraryRef.current?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-green-dark"
+                >
+                  Explorar a biblioteca <ArrowRight className="size-4" />
+                </a>
+              </div>
+              <div className="faq-list">
+                {[
+                  [
+                    "Como funciona o Fisio Express?",
+                    "Escolha uma região do corpo, adicione os exercícios à sua ficha e personalize séries, repetições e orientações. Depois, gere o PDF para baixar, imprimir ou compartilhar com seu paciente.",
+                  ],
+                  [
+                    "O que posso experimentar no Plano Free?",
+                    "Você pode explorar uma prévia de cada região do corpo, montar sua ficha e testar a geração do PDF. Ao final da biblioteca, o botão Assinar plano Plus apresenta as opções de planos.",
+                  ],
+                  [
+                    "Posso adicionar meus próprios exercícios?",
+                    "Sim. Na área de exercícios próprios, você pode cadastrar nome, região, imagem e instruções, além de editar seus exercícios e usá-los nas fichas. Exporte um backup para guardar uma cópia.",
+                  ],
+                  [
+                    "Posso baixar e enviar a ficha pelo WhatsApp?",
+                    "Sim. Depois de gerar a ficha, use Baixar PDF ou Enviar pelo WhatsApp. O compartilhamento direto do arquivo depende do navegador; quando necessário, baixe o PDF e anexe-o à conversa.",
+                  ],
+                  [
+                    "Meus exercícios ficam salvos em outros dispositivos?",
+                    "Os exercícios próprios ficam salvos neste navegador. Para levá-los a outro dispositivo, exporte um backup e importe-o no outro navegador. Atualmente não há login nem sincronização automática na nuvem.",
+                  ],
+                  [
+                    "Quais são os valores do Plus?",
+                    "O plano mensal é de R$ 19,90. O anual é de R$ 147, com economia de R$ 91,80 (38,4%) em comparação com 12 mensalidades. A contratação ficará disponível após a configuração do pagamento.",
+                  ],
+                  [
+                    "As orientações podem ser personalizadas para cada paciente?",
+                    "Sim. Você pode ajustar as instruções da ficha conforme sua avaliação profissional. A seleção dos exercícios e a prescrição devem ser individualizadas pelo fisioterapeuta responsável.",
+                  ],
+                ].map(([question, answer]) => (
+                  <details key={question} className="faq-item">
+                    <summary>
+                      {question}
+                      <span aria-hidden="true" className="faq-toggle">
+                        +
+                      </span>
+                    </summary>
+                    <p>{answer}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </section>
         </>
       )}
 
