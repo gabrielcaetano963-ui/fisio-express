@@ -136,8 +136,79 @@
 @utility hero-grid {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.36) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.36) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.36) 1px, transparent 1px),
+    radial-gradient(ellipse at 90% 15%, #b8edda 0%, transparent 55%),
+    linear-gradient(125deg, #edf5ff 0%, #e0f3f2 48%, #d1eee4 100%);
+  background-size:
+    32px 32px,
+    32px 32px,
+    100% 100%,
+    100% 100%;
+}
+
+.plus-gradient {
+  background-image:
+    radial-gradient(ellipse at top right, #20857588, transparent 65%),
+    linear-gradient(120deg, #12344d, #14554f);
+}
+
+.faq-section {
+  background: linear-gradient(125deg, #edf5fc 0%, #f7fbfa 50%, #e4f4ed 100%);
+}
+
+.faq-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.faq-item {
+  border: 1px solid #d7e4e6;
+  border-radius: 1rem;
+  background: #ffffffeb;
+  overflow: hidden;
+}
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: -4px;
+  border-radius: 1rem;
+}
+.faq-toggle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--green-dark);
+  font-size: 1.25rem;
+}
+.faq-item[open] .faq-toggle {
+  transform: rotate(45deg);
+}
+.faq-item[open] {
+  border-color: var(--green);
+}
+.faq-item p {
+  margin: 0;
+  padding: 0 1.25rem 1.25rem;
+  color: #526575;
+  font-size: 0.875rem;
+  line-height: 1.8;
 }
 
 @utility scrollbar-none {
