@@ -857,6 +857,13 @@ export function Index() {
           aria-label="Informações do site"
           className="mt-4 flex flex-wrap gap-x-6 gap-y-3 font-semibold text-primary"
         >
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("fisio:privacy"))}
+            className="underline underline-offset-4"
+          >
+            Preferências de cookies
+          </button>
           <a
             href="/privacidade"
             target="_blank"

@@ -100,6 +100,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <script defer src="/meta-pixel.js" />
         {children}
         <Scripts />
       </body>
