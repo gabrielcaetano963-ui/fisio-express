@@ -23,6 +23,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CustomExerciseDialog } from "@/components/custom-exercise-dialog";
+import { PlansDialog } from "@/components/plans-dialog";
 import {
   MAX_BACKUP_BYTES,
   parseBackup,
@@ -70,6 +71,7 @@ const emptyFields: PrescriptionFields = {
 };
 
 export function Index() {
+  const [plansOpen, setPlansOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("library");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Todos");
@@ -326,6 +328,14 @@ export function Index() {
               100 exercícios ilustrados
             </span>
           </nav>
+          <button
+            type="button"
+            onClick={() => setPlansOpen(true)}
+            className="ml-auto inline-flex items-center gap-2 rounded-full border border-green/30 bg-mint px-3 py-2 text-xs font-bold text-primary md:ml-0"
+            aria-label="Plano Free — conhecer o Plus"
+          >
+            Plano Free <span className="hidden text-green sm:inline">Ver Plus</span>
+          </button>
           <button
             type="button"
             aria-label="Abrir menu"
@@ -717,6 +727,7 @@ export function Index() {
           onSave={saveExercise}
         />
       )}
+      <PlansDialog open={plansOpen} onOpenChange={setPlansOpen} />
       <Dialog
         open={!!deleting}
         onOpenChange={(open) => {

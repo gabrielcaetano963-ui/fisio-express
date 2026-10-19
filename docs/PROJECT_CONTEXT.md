@@ -6,6 +6,14 @@ Transformar o aplicativo existente em uma ferramenta profissional em português:
 
 A última decisão do proprietário é usar **somente português**. Não investir em versões em inglês ou espanhol sem nova solicitação.
 
+## Planos definidos
+
+Plus mensal: R$ 19,90. Plus anual: R$ 147, cobrados por 12 meses. Economia anual: R$ 91,80 (38,4%) em relação a 12 mensalidades. Valores e links ficam centralizados em `src/data/plans.ts`.
+
+A interface apresenta o Plano Free e uma janela com os planos. O proprietário pediu o endereço `https://go.centerpag.com/PPU38CQH3TQ` nos dois planos; ambos estão cadastrados em `src/data/plans.ts`. Na conferência de 19/10/2026, o checkout mostrou um guia em espanhol por US$ 5,00, sem escolha visível de período. `checkoutVerified` permanece `false` e os botões pagos ficam indisponíveis até corrigir e verificar produto, moeda e períodos. O link antigo de US$ 9 do material em PDF também não serve como checkout destes planos.
+
+Login, banco na nuvem, confirmação de pagamento e liberação automática ainda não foram implementados. IndexedDB é armazenamento local. Não marcar um visitante como assinante a partir de parâmetros da URL ou de um sinalizador local. A limitação do PDF gratuito à primeira página e uma segunda página de oferta foi discutida, mas ainda não foi aplicada: o fluxo de PDF existente permanece disponível enquanto a contratação está em preparação.
+
 ## Conteúdo e fontes
 
 `src/data/library.json` é a fonte única da biblioteca publicada. Contém os 100 exercícios trabalhados anteriormente neste projeto, adaptados para português, com instruções, equipamentos e orientações adicionais. Os identificadores `library-001` a `library-100` correspondem às ilustrações `public/exercises/001.jpg` a `100.jpg`.
