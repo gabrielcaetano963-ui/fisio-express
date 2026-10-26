@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=646affb8-3d74-4128-b01a-b88ca3277b67
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>100+ Planilhas de Exercícios para Fisioterapia</title>
+    <meta name="description" content="+100 planilhas completas de exercícios para fisioterapia separadas por lesão, protocolos de reabilitação e bônus exclusivos. Acesso imediato via WhatsApp e e-mail." />
+    <meta name="author" content="Fisio Fichas Digital" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="100+ Planilhas de Exercícios para Fisioterapia" />
+    <meta name="twitter:title" content="100+ Planilhas de Exercícios para Fisioterapia" />
+    <meta property="og:description" content="+100 planilhas completas de exercícios para fisioterapia separadas por lesão, protocolos de reabilitação e bônus exclusivos. Acesso imediato via WhatsApp e e-mail." />
+    <meta name="twitter:description" content="+100 planilhas completas de exercícios para fisioterapia separadas por lesão, protocolos de reabilitação e bônus exclusivos. Acesso imediato via WhatsApp e e-mail." />
+    <meta property="og:image" content="mockups.png" />
+    <meta name="twitter:image" content="mockups.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Safe JSON circular reference protector -->
+    <script>
+      (function() {
+        const originalStringify = JSON.stringify;
+        JSON.stringify = function(value, replacer, space) {
+          const seen = new WeakSet();
+          function safeReplacer(key, val) {
+            if (typeof val === 'object' && val !== null) {
+              if (typeof Element !== 'undefined' && val instanceof Element) {
+                return '[Element ' + (val.tagName || 'Element') + ']';
+              }
+              if (seen.has(val)) {
+                return '[Circular]';
+              }
+              seen.add(val);
+            }
+            if (typeof replacer === 'function') {
+              return replacer.call(this, key, val);
+            }
+            return val;
+          }
+          try {
+            if (Array.isArray(replacer)) {
+              return originalStringify.call(this, value, replacer, space);
+            }
+            return originalStringify.call(this, value, safeReplacer, space);
+          } catch (e) {
+            return '{}';
+          }
+        };
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+
+    <!-- UTM parameters -->
+    <script
+      src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+      data-utmify-prevent-xcod-sck=""
+      data-utmify-prevent-subids=""
+      async=""
+      defer=""
+    ></script>
+    <!-- End UTM parameters -->
+
+
+    <style>
+      @font-face {
+        font-family: 'CameraPlainVariable';
+        src: url('/assets/CameraPlainVariable-BhPypTEq.woff2') format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-checkout-perfectpay.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-_gKz5bD8.css">
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '940829541718246');
+fbq('track', 'PageView');
+</script>
+<!-- End Meta Pixel Code -->
+  </head>
+
+  <body>
+    <noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=940829541718246&ev=PageView&noscript=1"
+/></noscript>
+    <div id="root"></div>
+  </body>
+</html>
